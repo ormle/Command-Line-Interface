@@ -20,6 +20,8 @@ typedef struct {
     Entry *entryArray;
 } Library;
 
+extern Library *lib;
+
 /*
  * Initializes the Library struct and returns a pointer to the
  * Library. Allocates memory for the Library and entries in the library
