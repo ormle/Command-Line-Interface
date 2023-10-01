@@ -7,6 +7,7 @@
 #----------------------------------------------------------------
 # Adapted from Lab 1
 */
+//#include "dataStructures.h"
 
 #define HISTSIZE = 5;
 
@@ -34,11 +35,6 @@ Returns from the application
 void quit_exit();
 
 /*
-Displays all environmental variables
+Initializes environmental variables
 */
-void print_evn_variables();
-
-/*
-Sets an environmental variable
-*/
-void export(char *name, char *value, Library *library);
+void evn_variables(Library *lib);

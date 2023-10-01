@@ -231,11 +231,11 @@ void print_all_entries(Library *lib)
     }
     else if (*amount > 0)
     {//At least one entry in the array
-        printf("Name\t Value\n");
+        //printf("Name=Value\n");
         while (j < *size || i < *amount)
         {
             if (entries[j].Name != NULL) {
-                printf("%s\t, %s\n", entries[j].Name, entries[j].Value);
+                printf("%s=%s\n", entries[j].Name, entries[j].Value);
                 i++;//To end once all names have been printed
             }
             j++;//To potentially go through the whole array
