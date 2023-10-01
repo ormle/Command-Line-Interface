@@ -1,11 +1,10 @@
 /*
 #-----------------------------------------------------------------
-# Montana ,Romel Mendoza
-# Lab 2
+# Romel Mendoza
+# Lab 1
 # Lab X01L
-# CMPT 360 
+# CMPT 360 Jeffrey Davis
 #----------------------------------------------------------------
-# Adapted from Lab 1
 */
 
 #include <stdio.h>
