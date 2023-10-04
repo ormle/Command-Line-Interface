@@ -369,3 +369,69 @@ void print_specific_entry(Library *lib, char * request)
     }
 
 }
+
+Queue * create_queue(unsigned int maxSize)
+{
+    //Allocate memory for queue
+    Queue *Q = malloc(sizeof(Queue));
+    //Set max size
+    Q->maxSize = maxSize;
+    //Set front position
+    Q->front = Q->amount = 0;
+
+    //Set the back position
+    Q->back = maxSize - 1;
+    //Allocate memory for the queue
+    Q->array = malloc(Q->maxSize * sizeof(char*));
+    
+    return Q;
+}
+
+int is_full(Queue * Q)
+{
+    return (Q->maxSize == Q->amount);
+}
+
+int is_empty(Queue * Q)
+{
+    return (Q->amount == 0);
+}
+
+void enqueue(Queue * Q, char* value)
+{
+    //Check if the queue is full
+    if (is_full(Q)){
+        //Return if full
+        return;
+    }
+    
+    //Set the back position
+    Q->back = (Q->back + 1) % Q->maxSize;
+    //Add value to queue
+    Q->array[Q->back] = value; //Malloc this?
+    Q->size++;
+}
+
+void dequeue(Queue* Q)
+{
+    //Check if queue is empty
+    if (is_empty(Q)){return}
+
+    //Get the value to dequeue
+    char* value = Q->array[Q->front];
+    //Move front value by one
+    Q->front = (Q->front + 1) % Q->maxSize;
+    Q->size--;//Decrease size
+}
+
+char* front(Queue* Q)
+{
+    if (is_empty(Q)){return ""}
+    return Q->array[Q->front];
+}
+
+char* back(Queue* Q)
+{
+    if (is_empty(Q)){return ""}
+    return Q->array[Q->back];
+}
