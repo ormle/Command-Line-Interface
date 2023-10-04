@@ -1,11 +1,10 @@
 /*
 #-----------------------------------------------------------------
-# Montana ,Romel Mendoza
-# Lab 2
+# Romel Mendoza
+# Lab 1
 # Lab X01L
-# CMPT 360 
+# CMPT 360 Jeffrey Davis
 #----------------------------------------------------------------
-# Adapted from Lab 1
 */
 
 #include <stdio.h>
@@ -231,11 +230,11 @@ void print_all_entries(Library *lib)
     }
     else if (*amount > 0)
     {//At least one entry in the array
-        //printf("Name=Value\n");
+        printf("Name\t Value\n");
         while (j < *size || i < *amount)
         {
             if (entries[j].Name != NULL) {
-                printf("%s=%s\n", entries[j].Name, entries[j].Value);
+                printf("%s\t, %s\n", entries[j].Name, entries[j].Value);
                 i++;//To end once all names have been printed
             }
             j++;//To potentially go through the whole array

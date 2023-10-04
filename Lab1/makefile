@@ -1,6 +1,5 @@
 #------------------------------------------------------------------
-# Montana ?, Romel Mendoza
-# Lab 2
+# Lab 1
 # Lab X01L
 # CMPT 360 
 # -----------------------------------------------------------------
@@ -13,16 +12,20 @@ dataStructures.o: dataStructures.c
 		$(CC) $(CFLAGS) -c $^
 dataStructures: dataStructures.o
 		$(CC) $(CFLAGS) -o dataStructures $^
-mrsh.o: mrsh.c
+testLibrary.o: testLibrary.c
 		$(CC) $(CFLAGS) -c $^
-mrsh: mrsh.c
-		$(CC) $(CFLAGS) -o mrsh $^
+testLibrary: testLibrary.o dataStructures.o
+		$(CC) $(CFLAGS) -o testLibrary $^
 
 all:
-	make mrsh
+	make testLibrary
+.PHONY:
 
-.PHONY: tarball
+tarball: dataStructures.c dataStructures.h testLibrary.c testInput.txt Q3.pdf makefile
+		tar -czf cmpt360_lab_01_RMM.tar.gz $^
 
-tarball: dataStructures.c dataStructures.h mrsh.c mrsh.h makefile
-		tar -czf cmpt360_lab_02_M?_RMM.tar.gz $^
+testdata:
+		./testLibrary < testInput.txt > testOutput.txt
+
+
 

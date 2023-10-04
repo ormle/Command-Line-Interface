@@ -1,11 +1,10 @@
 /*
 #-----------------------------------------------------------------
-# Montana ?,Romel Mendoza
+# Romel Mendoza
 # Lab 1
 # Lab X01L
 # CMPT 360 Jeffrey Davis
 #----------------------------------------------------------------
-# Adapted from Lab 1
 */
 
 
@@ -19,8 +18,6 @@ typedef struct {
     int Num_entries; //Keeps track of how many entries in the array
     Entry *entryArray;
 } Library;
-
-extern Library *lib;
 
 /*
  * Initializes the Library struct and returns a pointer to the
