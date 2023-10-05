@@ -8,7 +8,7 @@
 # Adapted from Lab 1
 */
 
-
+//Represents an entry or environmental variable
 typedef struct {
     char *Name; 
     char *Value;
@@ -90,4 +90,58 @@ void new_entry(Library*);
  *Clears the input buffer
  */
 void clear_input_buffer();
+
+
+//Struct to represent a queue
+//Adapted from https://www.geeksforgeeks.org/introduction-and-array-implementation-of-queue/
+
+typedef struct {
+    int front;              //Keeps track of front position
+    int back;               //Keeps track of back position
+    int amount;             //Keeps track of the number of elements in the queue
+    unsigned int maxSize;   //Maximum size of the queue
+    char* array;            //Elements of the queue
+} Queue;
+
+/*
+Creates a queue object with a given maxSize
+Inital size of the queue is 0
+*/
+Queue* create_queue(unsigned int maxSize);
+
+/*
+Determines if the queue is full
+1 = True  (Full queue)
+0 = False (Space available)
+*/
+int is_full(Queue* queue);
+
+/*
+Determines if the queue is empty
+1 = True (Empty queue)
+0 = False (At least one element in queue)
+*/
 ;
+int is_empty(Queue* queue);
+
+/*
+Adds an item to the end of the queue (back end)
+End and size are changed accordingly
+*/
+void enqueue(Queue* queue, char* value);
+
+/*
+Removes an item from the queue
+Front and size are changed accordingly
+*/
+void dequeue(Queue* queue);
+
+/*
+Returns the front item of the queue
+*/
+char* front(Queue* queue);
+
+/*
+Returns the back item of the queue
+*/
+char* back(Queue* queue);

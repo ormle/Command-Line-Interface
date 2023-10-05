@@ -7,8 +7,6 @@
 #----------------------------------------------------------------
 */
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +27,8 @@ int main(int argc, char *argv[])
     //Initialize at startup
     //Library
     Library *lib = create_library();
+    //Queue
+    Queue *History = create_queue(HISTSIZE);
     //Environmental Variables
     init_evn_variables(lib);
     //Command History
