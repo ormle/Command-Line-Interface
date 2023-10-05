@@ -1,6 +1,6 @@
 /*
 #-----------------------------------------------------------------
-# Montana ,Romel Mendoza
+# Montana K, Romel M
 # Lab 2
 # Lab X01L
 # CMPT 360 
@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <limits.h>
 #include "dataStructures.h"
 
 Library * create_library() 
@@ -288,7 +290,7 @@ char * get_entry(Library *lib, char *search_name)
     }
     else if (i > -1)
     {
-        printf("Value: %s\n", entries[i].Value);
+        //printf("Value: %s\n", entries[i].Value);
         value = entries[i].Value;
     }
     return value;
@@ -370,19 +372,45 @@ void print_specific_entry(Library *lib, char * request)
 
 }
 
+char * capitalize(const char* str)
+{
+    char *capitalized = malloc(strlen(str) +1);
+    if (capitalized == NULL){
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(capitalized, str);
+    for (int i = 0; i < strlen(capitalized); i++){
+        capitalized[i] = toupper(capitalized[i]);
+    }
+    return capitalized;
+}
+
 Queue * create_queue(unsigned int maxSize)
 {
     //Allocate memory for queue
     Queue *Q = malloc(sizeof(Queue));
+    //If malloc fails
+    if (Q == NULL) {
+        perror("Failed to allocate memory for queue");
+        exit(EXIT_FAILURE);
+    }
     //Set max size
     Q->maxSize = maxSize;
     //Set front position
-    Q->front = Q->amount = 0;
-
+    Q->front = 0;
+    //Set amount in queue
+    Q->amount = 0;
     //Set the back position
-    Q->back = maxSize - 1;
+    Q->back = 0;
     //Allocate memory for the queue
-    Q->array = malloc(Q->maxSize * sizeof(char*));
+    Q->array = malloc(Q->maxSize * sizeof(Node*));
+    //If malloc fails
+    if (Q->array == NULL){
+        perror("Failed to allocate memory for queue array");
+        free(Q);
+        exit(EXIT_FAILURE);
+    }
     
     return Q;
 }
@@ -404,34 +432,51 @@ void enqueue(Queue * Q, char* value)
         //Return if full
         return;
     }
-    
-    //Set the back position
+    //Malloc
+    Q->array[Q->back].line = malloc(strlen(value)+1);
+    //Copy into queue
+    strcpy(Q->array[Q->back].line, value);
+    //Move back
     Q->back = (Q->back + 1) % Q->maxSize;
-    //Add value to queue
-    Q->array[Q->back] = value; //Malloc this?
-    Q->size++;
+    Q->amount++;
 }
 
 void dequeue(Queue* Q)
 {
     //Check if queue is empty
-    if (is_empty(Q)){return}
+    if (is_empty(Q)){return;}
 
-    //Get the value to dequeue
-    char* value = Q->array[Q->front];
-    //Move front value by one
+    free(Q->array[Q->front].line);
     Q->front = (Q->front + 1) % Q->maxSize;
-    Q->size--;//Decrease size
+    Q->amount--;
 }
 
 char* front(Queue* Q)
 {
-    if (is_empty(Q)){return ""}
-    return Q->array[Q->front];
+    if (is_empty(Q)){return "";}
+    return Q->array[Q->front].line;
 }
 
 char* back(Queue* Q)
 {
-    if (is_empty(Q)){return ""}
-    return Q->array[Q->back];
+    if (is_empty(Q)){return "";}
+    return Q->array[Q->back].line;
+}
+
+void print_queue(Queue* Q)
+{
+    //Iterate through Queue and print
+    for (int i = 0; i < Q->amount; i++){
+        printf("  %-3d %s\n", i,Q->array[i].line);
+    }
+}
+
+void destroy_queue(Queue* Q)
+{
+    //Iterate through Queue and free
+    for (int i = 0; i < Q->amount; i++){
+        free(Q->array[i].line);
+    }
+    free(Q->array);
+    free(Q);
 }

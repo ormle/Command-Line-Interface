@@ -1,5 +1,5 @@
 #------------------------------------------------------------------
-# Montana ?, Romel Mendoza
+# Montana K, Romel Mendoza
 # Lab 2
 # Lab X01L
 # CMPT 360 
@@ -11,11 +11,11 @@ CFLAGS = -Wall -std=c11
 
 dataStructures.o: dataStructures.c
 		$(CC) $(CFLAGS) -c $^
+mrsh.o: mrsh.c
+		$(CC) $(CFLAGS) -c $^		
 dataStructures: dataStructures.o
 		$(CC) $(CFLAGS) -o dataStructures $^
-mrsh.o: mrsh.c
-		$(CC) $(CFLAGS) -c $^
-mrsh: mrsh.c
+mrsh: mrsh.o dataStructures.o
 		$(CC) $(CFLAGS) -o mrsh $^
 
 all:
