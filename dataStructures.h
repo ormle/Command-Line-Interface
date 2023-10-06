@@ -1,6 +1,6 @@
 /*
 #-----------------------------------------------------------------
-# Montana ?,Romel Mendoza
+# Montana K, Romel M
 # Lab 1
 # Lab X01L
 # CMPT 360 Jeffrey Davis
@@ -91,16 +91,25 @@ void new_entry(Library*);
  */
 void clear_input_buffer();
 
+/*
+Capitalizes a string and returns the capitalized string
+*/
+char * capitalize(const char* str);
+
 
 //Struct to represent a queue
 //Adapted from https://www.geeksforgeeks.org/introduction-and-array-implementation-of-queue/
+
+typedef struct {
+    char *line; //line
+} Node;
 
 typedef struct {
     int front;              //Keeps track of front position
     int back;               //Keeps track of back position
     int amount;             //Keeps track of the number of elements in the queue
     unsigned int maxSize;   //Maximum size of the queue
-    char* array;            //Elements of the queue
+    Node* array;            //Elements of the queue
 } Queue;
 
 /*
@@ -145,3 +154,13 @@ char* front(Queue* queue);
 Returns the back item of the queue
 */
 char* back(Queue* queue);
+
+/*
+Prints all items in the queue in the form
+*/
+void print_queue(Queue* queue);
+
+/*
+Frees memory allocated by the queue
+*/
+void destroy_queue(Queue* queue);
