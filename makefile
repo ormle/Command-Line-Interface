@@ -21,6 +21,9 @@ mrsh: mrsh.o dataStructures.o
 all:
 	make mrsh
 
+clean:
+	-rm *.o 
+
 .PHONY: tarball
 
 tarball: dataStructures.c dataStructures.h mrsh.c mrsh.h makefile
