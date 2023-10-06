@@ -22,7 +22,7 @@ all:
 	make mrsh
 
 clean:
-	-rm *.o 
+	-rm *.o mrsh
 
 .PHONY: tarball
 
