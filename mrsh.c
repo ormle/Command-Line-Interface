@@ -33,12 +33,12 @@ void evn_variables(Library *lib)
 int main(int argc, char *argv[])
 {   
     // storage space for user input and tokenizing
-    //char cwd[PATH_MAX];
+    //char cwd[PATH_MAX]; 
     char *cwd;
     char *choice = NULL;
     size_t choiceSize = 32;
-    char *calls[100];
-    char* whitespace = " =\t\n\f\r\v";
+    char *calls[100]; /*this will hold the user input so we can compare the string */
+    char* whitespace = " =\t\n\f\r\v";/* possible charaters to recognize for tokenizing input */
     int cmdCount = 0;//To count number of commands
     //Initialize at startup
     //Library
