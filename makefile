@@ -9,14 +9,12 @@
 CC = gcc
 CFLAGS = -Wall -std=c11
 
-dataStructures.o: dataStructures.c
-		$(CC) $(CFLAGS) -c $^
-mrsh.o: mrsh.c
-		$(CC) $(CFLAGS) -c $^		
-dataStructures: dataStructures.o
-		$(CC) $(CFLAGS) -o dataStructures $^
 mrsh: mrsh.o dataStructures.o
 		$(CC) $(CFLAGS) -o mrsh $^
+mrsh.o: mrsh.c
+		$(CC) $(CFLAGS) -c $^		
+dataStructures.o: dataStructures.c
+		$(CC) $(CFLAGS) -c $^
 
 all:
 	make mrsh
