@@ -1,6 +1,6 @@
 /*
 #-----------------------------------------------------------------
-# Montana K, Romel Mendoza
+# Montana Kampe, Romel Mendoza
 # Lab 1
 # Lab X01L
 # CMPT 360 Jeffrey Davis
@@ -12,6 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include "dataStructures.h"
 #include "mrsh.h"
 
@@ -48,7 +49,18 @@ int main(int argc, char *argv[])
     //Environmental Variables
     evn_variables(lib);
 
-    
+    /* this function witll take in the calls array and the pid of a child
+        process then call execute*/
+    void action(char **calls, int c1){
+        if(c1 < 0){ /* if c1 is less than 0 the fork failed*/
+            fprintf(stderr,"Failed to execute")
+            exit(1)
+        }
+        else if (c1 == 0){ /* when c1 equals 0 then fork worked then can execute*/
+        execvp(calls[0], calls);
+        exit(0)
+        }
+    }
 
     while (1)
     {
@@ -97,6 +109,17 @@ int main(int argc, char *argv[])
             /*Displays command history*/
             print_queue(History);
         }
+
+        else{
+            int wc;
+            int c1 = fork();
+
+            action(calls, c1);
+            wc = wait(NULL);
+            
+        }
+
+
     }
     //Free memory
     destroy_library(lib);
