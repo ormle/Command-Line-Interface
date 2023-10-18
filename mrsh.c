@@ -77,12 +77,12 @@ int main(int argc, char *argv[])
         process then call execute*/
     void action(char **calls, int c1){
         if(c1 < 0){ /* if c1 is less than 0 the fork failed*/
-            fprintf(stderr,"Failed to execute")
-            exit(1)
+            fprintf(stderr,"Failed to execute");
+            exit(1);
         }
         else if (c1 == 0){ /* when c1 equals 0 then fork worked then can execute*/
         execvp(calls[0], calls);
-        exit(0)
+        exit(0);
         }
     }
 
