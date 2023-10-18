@@ -3,7 +3,7 @@
 # Montana Kampe, Romel Mendoza
 # Lab 1
 # Lab X01L
-# CMPT 360 Jeffrey Davis
+# CMPT 360 
 #----------------------------------------------------------------
 */
 
@@ -17,18 +17,42 @@
 #include "mrsh.h"
 
 extern Library *lib;
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 void evn_variables(Library *lib)
 {
-    add_entry(lib, "CC", "");
-    add_entry(lib, "EDITOR", "");
-    add_entry(lib, "HOME", "");
-    add_entry(lib, "OLDPWD", "");
-    add_entry(lib, "HOST", "host");
-    add_entry(lib, "PATH", "");
-    add_entry(lib, "PWD", "currentDir");
-    add_entry(lib, "SHELL", "");
-    add_entry(lib, "USER", "user");
+    //Set variables
+    char *cc = getenv("CC");
+    char *editor = getenv("EDITOR");
+    char *home = getenv("HOME");
+    char *oldpwd = getenv("OLDPWD");
+    char *host = getenv("HOST");
+    char *path = getenv("PATH");
+    char *pwd = getenv("PWD");
+    char *shell = getenv("SHELL");
+    char *user = getenv("USER");
+
+    //If Null set to empty string
+    if (cc == NULL){ cc = "";}
+    if (editor == NULL){ editor = "";}
+    if (home == NULL){ home = "";}
+    if (oldpwd == NULL){ oldpwd = "";}
+    if (host == NULL){host = "";}
+    if (path == NULL) {path = "";}
+    if (pwd == NULL){pwd = "";}
+    if (shell == NULL){shell = "";}
+    if (user == NULL){user = "";}
+
+    //Add to environment
+    add_entry(lib, "CC", cc);
+    add_entry(lib, "EDITOR", editor);
+    add_entry(lib, "HOME", home);
+    add_entry(lib, "OLDPWD", oldpwd);
+    add_entry(lib, "HOST", host);
+    add_entry(lib, "PATH", path);
+    add_entry(lib, "PWD", pwd);
+    add_entry(lib, "SHELL", shell);
+    add_entry(lib, "USER", user);
 }
 
 int main(int argc, char *argv[])

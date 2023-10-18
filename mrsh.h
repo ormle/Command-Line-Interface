@@ -3,7 +3,7 @@
 # Montana K, Romel M
 # Lab 1
 # Lab X01L
-# CMPT 360 Jeffrey Davis
+# CMPT 360
 #----------------------------------------------------------------
 # Adapted from Lab 1
 */
@@ -12,6 +12,7 @@
 #define HISTSIZE 5
 
 extern Library *lib;
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 /*
 Initializes environmental variables

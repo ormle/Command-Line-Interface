@@ -3,7 +3,7 @@
 # Montana K, Romel M
 # Lab 1
 # Lab X01L
-# CMPT 360 Jeffrey Davis
+# CMPT 360
 #----------------------------------------------------------------
 # Adapted from Lab 1
 */

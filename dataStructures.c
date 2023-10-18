@@ -467,7 +467,7 @@ void print_queue(Queue* Q)
 {
     //Iterate through Queue and print
     for (int i = 0; i < Q->amount; i++){
-        printf("  %-3d %s\n", i,Q->array[i].line);
+        printf("  %-3d %s", i,Q->array[i].line);
     }
 }
 
