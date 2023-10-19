@@ -415,6 +415,20 @@ Queue * create_queue(unsigned int maxSize)
     return Q;
 }
 
+Queue * copy_queue(Queue* original)
+{
+    Queue* copy = create_queue(original->maxSize);
+    int oamount = original->amount;
+    int count;
+
+    for (count=0 ; count < oamount ; count++) {
+        //Enqueue element from original to copy
+        enqueue(copy, original->array[count].line);
+    }
+
+    return copy;
+}
+
 int is_full(Queue * Q)
 {
     return (Q->maxSize == Q->amount);

@@ -119,6 +119,12 @@ Inital size of the queue is 0
 Queue* create_queue(unsigned int maxSize);
 
 /*
+Creates a copy of the queue
+Returns a Queue object that is a copy of the original
+*/
+Queue* copy_queue(Queue* original);
+
+/*
 Determines if the queue is full
 1 = True  (Full queue)
 0 = False (Space available)
