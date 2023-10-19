@@ -54,6 +54,54 @@ void evn_variables(Library *lib)
     add_entry(lib, "SHELL", shell);
     add_entry(lib, "USER", user);
 }
+/* this function witll take in the calls array and the pid of a child
+        process then call execute*/
+void action(char **calls, pid_t cpid)
+{
+    if(cpid < 0){ /* if c1 is less than 0 the fork failed*/
+        fprintf(stderr,"Failed to execute");
+        exit(1);
+    }
+    else if (cpid == 0){ /* when cpid equals 0 then fork worked then can execute*/
+        execvp(calls[0], calls);
+        exit(0);
+    }
+}
+
+/*
+Runs the executable command in the background
+*/
+void action_background(char **calls){
+    pid_t child, grandchild;
+                
+    child = fork();
+
+    if (child < 0){
+        //Fork failed
+        fprintf(stderr, "Fork failed");
+        exit(1);
+    }
+    if (child > 0){
+        wait(NULL); //Zombie prevention
+    }else{
+        grandchild = fork();
+        if (grandchild < 0){
+            //Fork failed
+            fprintf(stderr, "Fork failed");
+            exit(1);
+        }
+        if (grandchild > 0){
+            exit(0);//Orphan status
+        }
+        else{
+            execvp(calls[0], calls);
+            close(STDIN_FILENO);
+            close(STDOUT_FILENO);
+            close(STDERR_FILENO);
+            exit(0);
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {   
@@ -72,19 +120,6 @@ int main(int argc, char *argv[])
     Queue *History = create_queue(HISTSIZE);
     //Environmental Variables
     evn_variables(lib);
-
-    /* this function witll take in the calls array and the pid of a child
-        process then call execute*/
-    void action(char **calls, int c1){
-        if(c1 < 0){ /* if c1 is less than 0 the fork failed*/
-            fprintf(stderr,"Failed to execute");
-            exit(1);
-        }
-        else if (c1 == 0){ /* when c1 equals 0 then fork worked then can execute*/
-        execvp(calls[0], calls);
-        exit(0);
-        }
-    }
 
     while (1)
     {
@@ -119,6 +154,9 @@ int main(int argc, char *argv[])
         /*return from application*/
         {break;}
         else if (strcmp(calls[0], "export") == 0) {
+            if (strcmp(calls[1], "") == 0 || calls[1] == 0){
+                continue;
+            }
             /* Set an environmental variable  */
             //Need to capitialize environmental variables
             char *name = capitalize(calls[1]);
@@ -133,17 +171,40 @@ int main(int argc, char *argv[])
             /*Displays command history*/
             print_queue(History);
         }
-
-        else{
-            int wc;
-            int c1 = fork();
-
-            action(calls, c1);
-            wc = wait(NULL);
-            
+        else if (strcmp(&calls[0][0], "!") == 0){
+            /*Run last matching application in hisotry*/
+            if (History->amount > 0){
+                Queue *Hcopy;
+                Hcopy = History; //Create a copy to cycle through
+                int a = Hcopy->amount;
+                int j;
+                for (j = 0; j < a; j++){
+                    //Get front item from queue
+                    char *app = front(Hcopy);
+                    //Compare
+                    if (strncmp(app, &calls[0][1], 10) == 0){
+                        //Execute
+                        //Need to retokenize?? to rerun command/executable?
+                        break;
+                    }
+                    dequeue(Hcopy);
+                }
+            }
         }
+        else{
+            /*Execute an executable*/
+            if (strcmp(calls[i-1], "&") == 0){
+                /*Run in background*/
+                action_background(calls);
+            }else{
+                /*Run in foreground*/
+                //int wc;
+                pid_t cpid = fork();
 
-
+                action(calls, cpid);
+                /*wc = */wait(NULL);
+            }
+        }
     }
     //Free memory
     destroy_library(lib);
