@@ -56,13 +56,19 @@ void evn_variables(Library *lib)
 }
 /* this function witll take in the calls array and the pid of a child
         process then call execute*/
-void action(char **calls, pid_t cpid)
+void action_foreground(char **calls)
 {
-    if(cpid < 0){ /* if c1 is less than 0 the fork failed*/
+    pid_t cpid;
+    cpid = fork();
+
+    if(cpid < 0){ /* if cpid is less than 0 the fork failed*/
         fprintf(stderr,"Failed to execute");
         exit(1);
     }
-    else if (cpid == 0){ /* when cpid equals 0 then fork worked then can execute*/
+    if (cpid > 0){//
+        wait(NULL);//Zombie prevention
+    }
+    if (cpid == 0){ /* when cpid equals 0 then fork worked then can execute*/
         execvp(calls[0], calls);
         exit(0);
     }
@@ -103,6 +109,38 @@ void action_background(char **calls){
     }
 }
 
+/*
+Reruns last matching application in the command history
+*/
+void run_last(Queue *History, char **calls)
+{
+    if (History->amount > 0){
+        //Copy History to cycle through
+        Queue *Hcopy = copy_queue(History);
+        int a = Hcopy->amount;
+        int j;
+        //App to look for
+        //Take out ! from string so we only match executable name
+        char *app = malloc(strlen(&calls[0][1])+1);
+        strcpy(app, &calls[0][1]);
+        //printf("App: %s\n", app);
+        for (j = 0; j < a; j++){
+            //Get front item from queue
+            char *f = front(Hcopy);
+            //printf("Front: %s\n", f);
+            //Compare
+            if (strncmp(app, f, strlen(app)) == 0){
+                //Execute
+                calls[0] = app;
+                action_foreground(calls);
+                return;
+            }
+            else {dequeue(Hcopy);}
+        }
+        //destroy_queue(Hcopy);
+    }
+}
+
 int main(int argc, char *argv[])
 {   
     // storage space for user input and tokenizing
@@ -111,8 +149,7 @@ int main(int argc, char *argv[])
     char *choice = NULL;
     size_t choiceSize = 32;
     char *calls[100]; /*this will hold the user input so we can compare the string */
-    char* whitespace = " =\t\n\f\r\v";/* possible charaters to recognize for tokenizing input */
-    int cmdCount = 0;//To count number of commands
+    char* whitespace = " =\t\n\f\r\v";/* possible characters to recognize for tokenizing input */
     //Initialize at startup
     //Library
     Library *lib = create_library();
@@ -136,10 +173,8 @@ int main(int argc, char *argv[])
         //Read user input of any length
         getline(&choice, &choiceSize, stdin);
         
-        cmdCount++;
-        if (cmdCount > HISTSIZE){
+        if (History->amount == HISTSIZE){
             dequeue(History);
-            cmdCount = 0;
         }
         enqueue(History, choice);
 
@@ -171,25 +206,9 @@ int main(int argc, char *argv[])
             /*Displays command history*/
             print_queue(History);
         }
-        else if (strcmp(&calls[0][0], "!") == 0){
-            /*Run last matching application in hisotry*/
-            if (History->amount > 0){
-                Queue *Hcopy;
-                Hcopy = History; //Create a copy to cycle through
-                int a = Hcopy->amount;
-                int j;
-                for (j = 0; j < a; j++){
-                    //Get front item from queue
-                    char *app = front(Hcopy);
-                    //Compare
-                    if (strncmp(app, &calls[0][1], 10) == 0){
-                        //Execute
-                        //Need to retokenize?? to rerun command/executable?
-                        break;
-                    }
-                    dequeue(Hcopy);
-                }
-            }
+        else if (strncmp(&calls[0][0], "!", 1) == 0){
+            /*Run last matching application in history*/
+            run_last(History, calls);
         }
         else{
             /*Execute an executable*/
@@ -198,11 +217,7 @@ int main(int argc, char *argv[])
                 action_background(calls);
             }else{
                 /*Run in foreground*/
-                //int wc;
-                pid_t cpid = fork();
-
-                action(calls, cpid);
-                /*wc = */wait(NULL);
+                action_foreground(calls);
             }
         }
     }
