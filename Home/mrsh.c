@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
         }
         enqueue(History, choice);
 
-        /* tokenizes user input */ //Breaks program if replaced with tokenize() fxn
+        /* tokenizes user input */ //segfaults if replaced with tokenize() fxn
         if (strlen(choice) > 1){ 
             calls[i] = strtok(choice, whitespace);
             while (calls[i] != NULL){
