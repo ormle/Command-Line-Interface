@@ -110,6 +110,23 @@ void action_background(char **calls){
 }
 
 /*
+Takes the user input and splits it into tokens
+Tokens are stored in order in calls
+*/
+void tokenize(char *choice, char **calls)
+{
+    char* whitespace = " =\t\n\f\r\v"; /* possible characters to recognize for tokenizing input */
+    int i = 0;
+
+    if (strlen(choice) > 1){ 
+        calls[i] = strtok(choice, whitespace);
+        while (calls[i] != NULL){
+            calls[++i] = strtok(NULL,whitespace);
+        }
+    }
+}
+
+/*
 Reruns last matching application in the command history
 */
 void run_last(Queue *History, char **calls)
@@ -130,9 +147,11 @@ void run_last(Queue *History, char **calls)
             //printf("Front: %s\n", f);
             //Compare
             if (strncmp(app, f, strlen(app)) == 0){
+                //Retokenize command line arguments
+                char *last_call[100];
+                tokenize(f, last_call);
                 //Execute
-                calls[0] = app;
-                action_foreground(calls);
+                action_foreground(last_call);
                 return;
             }
             else {dequeue(Hcopy);}
@@ -164,26 +183,29 @@ int main(int argc, char *argv[])
         char* user = get_entry(lib, "USER");
         char* host = get_entry(lib, "HOST");
         cwd = get_entry(lib, "PWD");
-        /*
-        Lab02 specs say currentDir is taken from 
-        the environemntal variables, commented out for possible future use
-        */
+        
         //getcwd(cwd, sizeof(cwd)); 
         printf("%s@%s:%s>>", user, host, cwd);
         //Read user input of any length
         getline(&choice, &choiceSize, stdin);
-        
+
+        /*Add to the command history,
+          Dequeue last command if full
+        */
         if (History->amount == HISTSIZE){
             dequeue(History);
         }
         enqueue(History, choice);
 
-        if (strlen(choice) > 1){ /* tokenizes user input */
+        /* tokenizes user input */ //Breaks program if replaced with tokenize() fxn
+        if (strlen(choice) > 1){ 
             calls[i] = strtok(choice, whitespace);
             while (calls[i] != NULL){
                 calls[++i] = strtok(NULL,whitespace);
             }
         }
+        
+        /*Check if pipe is being done*/
 
         if (strcmp(calls[0], "exit") == 0 || strcmp(calls[0], "quit") == 0) 
         /*return from application*/
