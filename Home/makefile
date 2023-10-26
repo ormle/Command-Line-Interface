@@ -30,7 +30,7 @@ all:
 	make test2
 
 clean:
-	-rm *.o mrsh test1 test2
+	-rm *.o mrsh test1 test2 output.txt
 
 .PHONY: tarball
 
