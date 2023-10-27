@@ -129,6 +129,37 @@ void action_background(char **calls){
     }
 }
 
+void redirection(char **calls){
+    int rIn, rOut;
+    int i = 0;
+
+    while (calls[i] != NULL){
+        if (strcmp(calls[i],">") == 0){
+            rOut = open(calls[i + 1], O_WRONLY | O_CREAT | O_TRUNC);
+            if (rOut == -1){
+                perror('open');
+                exit(1);
+            }
+            dup2(rOut, stdout);
+            close(rOut);
+            break;
+        } else if (strcmp(calls[i], "<") == 0) {
+            rIn = open(calls[i + 1], O_RDONLY);
+            if (rIn == -1){
+                perror("open");
+                exit(1);
+            }
+            dup2(rIn,0);
+            close(rIn);
+            break;
+        }
+        i++;
+    }
+    execvp(calls[0], calls);
+    perror("execvp");
+    exit(1);
+}
+
 /*
 Splits a piping command at the | into left and right command arrays
 Left command contains the commands until the | 
@@ -358,6 +389,11 @@ int main(int argc, char *argv[])
         else if (strncmp(&calls[0][0], "!", 1) == 0){
             /*Run last matching application in history*/
             run_last(History, calls);
+        } else {
+
+            if(strstr(choice, ">") || strstr(choice, "<")){
+                redirection(calls);
+            }
         }
         else{
             /*Execute an executable*/
