@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <pwd.h>
 #include "dataStructures.h"
 #include "mrsh.h"
 
@@ -23,27 +24,38 @@ extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 void evn_variables(Library *lib)
 {
+    //Get UID
+    uid_t uid = geteuid();
+    //Get password
+    struct passwd *pw = getpwuid(uid);
+    
+    char *user = pw->pw_name;
+    char *home = pw->pw_dir;
+    char *shell = pw->pw_shell;
+    char host[256];
+    char pwd[256];
+
+    //These next 4 im not sure what I should set them to
+    char *cc = NULL;
+    char *editor = NULL;
+    char *oldpwd = NULL;
+    char *path = NULL;
+
     //Set variables
-    char *cc = getenv("CC");
-    char *editor = getenv("EDITOR");
-    char *home = getenv("HOME");
-    char *oldpwd = getenv("OLDPWD");
-    char *host = getenv("HOST");
-    char *path = getenv("PATH");
-    char *pwd = getenv("PWD");
-    char *shell = getenv("SHELL");
-    char *user = getenv("USER");
+    gethostname(host, sizeof(host));
+    //Change directory to home directory
+    chdir(home);
+    getcwd(pwd, sizeof(pwd));
 
     //If Null set to empty string
-    if (cc == NULL){ cc = "";}
-    if (editor == NULL){ editor = "";}
-    if (home == NULL){ home = "";}
-    if (oldpwd == NULL){ oldpwd = "";}
-    if (host == NULL){host = "";}
-    if (path == NULL) {path = "";}
-    if (pwd == NULL){pwd = "";}
-    if (shell == NULL){shell = "";}
     if (user == NULL){user = "";}
+    if (home == NULL){ home = "";}
+    if (shell == NULL){shell = "";}
+    
+    if (cc == NULL){ cc = "";}//For now these are empty
+    if (editor == NULL){ editor = "";}
+    if (oldpwd == NULL){ oldpwd = "";}
+    if (path == NULL) {path = "";}
 
     //Add to environment
     add_entry(lib, "CC", cc);
