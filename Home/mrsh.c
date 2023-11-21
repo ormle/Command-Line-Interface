@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <pwd.h>
 #include "dataStructures.h"
 #include "mrsh.h"
 
@@ -23,27 +24,38 @@ extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 void evn_variables(Library *lib)
 {
+    //Get UID
+    uid_t uid = geteuid();
+    //Get password
+    struct passwd *pw = getpwuid(uid);
+    
+    char *user = pw->pw_name;
+    char *home = pw->pw_dir;
+    char *shell = pw->pw_shell;
+    char host[256];
+    char pwd[256];
+
+    //These next 4 im not sure what I should set them to
+    char *cc = NULL;
+    char *editor = NULL;
+    char *oldpwd = NULL;
+    char *path = NULL;
+
     //Set variables
-    char *cc = getenv("CC");
-    char *editor = getenv("EDITOR");
-    char *home = getenv("HOME");
-    char *oldpwd = getenv("OLDPWD");
-    char *host = getenv("HOST");
-    char *path = getenv("PATH");
-    char *pwd = getenv("PWD");
-    char *shell = getenv("SHELL");
-    char *user = getenv("USER");
+    gethostname(host, sizeof(host));
+    //Change directory to home directory
+    chdir(home);
+    getcwd(pwd, sizeof(pwd));
 
     //If Null set to empty string
-    if (cc == NULL){ cc = "";}
-    if (editor == NULL){ editor = "";}
-    if (home == NULL){ home = "";}
-    if (oldpwd == NULL){ oldpwd = "";}
-    if (host == NULL){host = "";}
-    if (path == NULL) {path = "";}
-    if (pwd == NULL){pwd = "";}
-    if (shell == NULL){shell = "";}
     if (user == NULL){user = "";}
+    if (home == NULL){ home = "";}
+    if (shell == NULL){shell = "";}
+    
+    if (cc == NULL){ cc = "";}//For now these are empty
+    if (editor == NULL){ editor = "";}
+    if (oldpwd == NULL){ oldpwd = "";}
+    if (path == NULL) {path = "";}
 
     //Add to environment
     add_entry(lib, "CC", cc);
@@ -129,19 +141,28 @@ void action_background(char **calls){
     }
 }
 
-void redirection(char **calls){
-    int rIn, rOut;
+/*
+Redirects STDOUT to a file or a file to a command
+Flag indicates whether this is being done in the background or not
+*/
+void redirection(char **calls, int flag){
+    int rIn, rOut, inOriginal, outOriginal;
     int i = 0;
+
+    outOriginal = dup(STDOUT_FILENO);//Keep original output
+    inOriginal = dup(STDIN_FILENO);//Keep original input
 
     while (calls[i] != NULL){
         if (strcmp(calls[i],">") == 0){
             rOut = open(calls[i + 1], O_WRONLY | O_CREAT | O_TRUNC);
             if (rOut == -1){
-                perror('open');
+                perror("open");
                 exit(1);
             }
-            dup2(rOut, stdout);
+            dup2(rOut, STDOUT_FILENO);
             close(rOut);
+            chmod(calls[i+1], S_IRUSR | S_IWUSR);//File permissions
+            calls[i] = NULL;
             break;
         } else if (strcmp(calls[i], "<") == 0) {
             rIn = open(calls[i + 1], O_RDONLY);
@@ -149,15 +170,21 @@ void redirection(char **calls){
                 perror("open");
                 exit(1);
             }
-            dup2(rIn,0);
+            dup2(rIn, STDIN_FILENO);
             close(rIn);
+            chmod(calls[i+1], S_IRUSR | S_IWUSR);//File permissions
+            calls[i] = NULL;
             break;
         }
         i++;
     }
-    execvp(calls[0], calls);
-    perror("execvp");
-    exit(1);
+
+    if (flag){
+        action_background(calls);
+    }else { action_foreground(calls); }
+
+    dup2(outOriginal, STDOUT_FILENO);//Make output back to original
+    dup2(inOriginal, STDIN_FILENO);//Make input back to original
 }
 
 /*
@@ -165,9 +192,11 @@ Splits a piping command at the | into left and right command arrays
 Left command contains the commands until the | 
 Right command contains the commands after |
 (Inconclusive, | is not added to either array)
-Returns: Position of next available space in rightCommand array
+
+llast and rlast become the spot in the array after all commands in array
+to become NULL or to make adding extra commands easy
 */
-int split_pipe(char **calls, char **leftCommand, char **rightCommand)
+void split_pipe(char **calls, char **leftCommand, char **rightCommand, int *llast, int *rlast)
 {
     int i = 0; //To parse calls
     int j = 0; //To parse left/right command arrays
@@ -179,6 +208,7 @@ int split_pipe(char **calls, char **leftCommand, char **rightCommand)
     }
     leftCommand[j] = NULL;
     i++;
+    *llast = j;
     j = 0;
     //Fill right command 
     while (calls[i] != NULL){
@@ -189,7 +219,21 @@ int split_pipe(char **calls, char **leftCommand, char **rightCommand)
     rightCommand[j] = NULL;
     rightCommand[j+1] = NULL;
     
-    return j;
+    *rlast = j;
+}
+
+/*
+Deletes a file
+*/
+int deleteFile(char *filename)
+{
+    if (remove(filename) == 0) {
+        //printf("%s deleted successfully.\n", filename);
+        return 0; // Success
+    } else {
+        perror("Error deleting file");
+        return 1; // Error
+    }
 }
 
 /*
@@ -199,8 +243,9 @@ void pipe_foreground(char **calls)
 {
     char *leftCommand[30];
     char *rightCommand[30];
-    int rSpace = split_pipe(calls, leftCommand, rightCommand);
-    char *fileName = "output.txt";
+    int llast, rlast;
+    split_pipe(calls, leftCommand, rightCommand, &llast, &rlast);
+    char *fileName = "tmp.txt";
 
     int fd[2];
     pid_t pid;
@@ -210,25 +255,20 @@ void pipe_foreground(char **calls)
 
     if (pid != 0){ //Parent
         close(fd[1]);  //Close write end
-
         wait(NULL);//Wait for child process to exit
         chmod(fileName, S_IRUSR | S_IWUSR);//File permissions
 
-        rightCommand[rSpace] = fileName; 
+        rightCommand[rlast] = fileName; 
         action_foreground(rightCommand);
+        deleteFile(fileName); //Deletes the temporary file, Comment out if want to see it
     }
     else{ //Child
         close(fd[0]); //Close the reading end
         //Redirect stdout to a file
-        int out = open(fileName, O_CREAT | O_RDWR | O_TRUNC);
-        dup2(out, STDOUT_FILENO);
-        close(out);
-        //Exec commands to put in file
-        if (execvp(leftCommand[0], leftCommand) == -1){
-            perror("execvp");
-            exit(EXIT_FAILURE);
-        };
-        exit(0);
+        leftCommand[llast] = ">";
+        leftCommand[llast + 1] = fileName; 
+        redirection(leftCommand, 0);
+        exit(EXIT_SUCCESS);
     }
 }
 /*
@@ -238,9 +278,10 @@ void pipe_background(char **calls)
 {
     char *leftCommand[30];
     char *rightCommand[30];
-    char *fileName = "output.txt";
+    char *fileName = "tmp.txt";
+    int llast, rlast;
 
-    int rSpace = split_pipe(calls, leftCommand, rightCommand);
+    split_pipe(calls, leftCommand, rightCommand, &llast, &rlast);
     int fd[2];
     pid_t pidc, pidgc;
 
@@ -252,8 +293,9 @@ void pipe_background(char **calls)
         wait(NULL);//Zombie prevention
         chmod(fileName, S_IRUSR | S_IWUSR);//Edit file permissions
 
-        rightCommand[rSpace] = fileName;
+        rightCommand[rlast-1] = fileName;
         action_background(rightCommand);
+        deleteFile(fileName);//Deletes the temporary file, Comment out if want to see it
     }else{//Child
         pidgc = fork();
         if (pidgc > 0){//Child
@@ -262,14 +304,46 @@ void pipe_background(char **calls)
         else{//Grandchild
             close(fd[0]);//Close reading end
             //Redirect stdout to a file
-            int out = open(fileName, O_CREAT | O_RDWR | O_TRUNC);
-            dup2(out, STDOUT_FILENO);
-            close(out);
-            //Execute commands
-            action_background(leftCommand);
+            leftCommand[llast] = ">";
+            leftCommand[llast + 1] = fileName;
+            redirection(leftCommand, 1);
             exit(0);
         }
     }
+}
+
+/*
+Raises a flag if piping character is found
+*/
+int pipe_flag(char *string)
+{
+    int pflag = 0;
+    if (strstr(string, "|") != NULL){
+        pflag = 1;//Set flag
+    }
+    return pflag;
+}
+/*
+Raises a flag if redirection character is found
+*/
+int redirection_flag(char *string)
+{
+    int rflag = 0;
+    if(strstr(string, ">") || strstr(string, "<")){
+        rflag = 1;//Set flag
+    }
+    return rflag;
+}
+/*
+Raises a flag if run-in-background character is found
+*/
+int background_flag(char *string)
+{
+    int bflag = 0;
+    if (strstr(string, "&") != NULL){
+        bflag = 1;//Set flag
+    }
+    return bflag;
 }
 
 /*
@@ -294,27 +368,32 @@ void run_last(Queue *History, char **calls)
             //Compare
             if (strncmp(app, f, strlen(app)) == 0){
                 //Retokenize command line arguments
-                int pflag = 0;
+                int pflag = pipe_flag(f);//pipe flag
+                int rflag = redirection_flag(f);//redirection flag
+                int bflag = background_flag(f);//run in background flag
                 char *last_call[100];
-                /*Check if pipe is being done*/
-                if (strchr(f, '|') != NULL){
-                    pflag = 1;//Set flag
-                }
                 
                 tokenize(f, last_call); //Changes f and last_call
                 //Execute
                 if (pflag){
-                    /*Check if pipe is being done*/
-                    pipe_foreground(last_call);
+                    if (bflag){
+                        pipe_background(last_call);
+                    }else{ pipe_foreground(last_call); }
+                }else if (rflag){
+                    if (bflag){
+                        redirection(last_call, 1);
+                    }else{ redirection(last_call, 0); }
                 }else{
-                    action_foreground(last_call);
+                    if (bflag){
+                        action_background(last_call);
+                    }else{ action_foreground(last_call);}
                 }
                 return;
             }
-            else {dequeue(Hcopy);}
-        }
+            else { dequeue(Hcopy); }
+        }//End for
         //destroy_queue(Hcopy);
-    }
+    }//End if
 }
 
 int main(int argc, char *argv[])
@@ -334,7 +413,10 @@ int main(int argc, char *argv[])
     while (1)
     {
         int i = 0;
-        int pflag = 0; //Flag to indicate if piping in command line, 1=Pipe, 0=no pipe
+        //Flags -> 1=TRUE, 0=FALSE
+        int bflag = 0; //Flag to indicate if execute command in background
+        int rflag = 0; //Flag to indicate if redirection is being requested
+        int pflag = 0; //Flag to indicate if piping in command line
         char* user = get_entry(lib, "USER");
         char* host = get_entry(lib, "HOST");
         cwd = get_entry(lib, "PWD");
@@ -352,10 +434,13 @@ int main(int argc, char *argv[])
         }
         enqueue(History, choice);
 
+        //Check flags
         /*Check if pipe is being done*/
-        if (strchr(choice, '|') != NULL){
-            pflag = 1;//Set flag
-        }
+        pflag = pipe_flag(choice);//Set flag
+        /*Check if redirection is being done*/
+        rflag = redirection_flag(choice);//Set flag
+        /*Check if background execution*/
+        bflag = background_flag(choice);//Set flag
 
         /* tokenizes user input */ //segfaults if replaced with tokenize() fxn
         if (strlen(choice) > 1){ 
@@ -389,36 +474,31 @@ int main(int argc, char *argv[])
         else if (strncmp(&calls[0][0], "!", 1) == 0){
             /*Run last matching application in history*/
             run_last(History, calls);
-        } else {
-
-            if(strstr(choice, ">") || strstr(choice, "<")){
-                redirection(calls);
-            }
         }
         else{
             /*Execute an executable*/
-            if (strcmp(calls[i-1], "&") == 0){
+            if (bflag){
                 /*Run in background*/
                 if (pflag){//Pipe command
                     pipe_background(calls);
+                }else if (rflag){//Redirection command
+                    redirection(calls, 1);
                 }
-                else{
-                    action_background(calls);
-                }
+                else{ action_background(calls); }
             }else{
                 /*Run in foreground*/
                 if (pflag){//Pipe command
                     pipe_foreground(calls);
-                }else{
-                    action_foreground(calls);
                 }
+                else if (rflag){//Redirection command
+                    redirection(calls, 0);
+                } 
+                else{ action_foreground(calls); }
             }
         }
-    }
+    }//End while
     //Free memory
     destroy_library(lib);
     destroy_queue(History);
     return 0;
 }
-
-
