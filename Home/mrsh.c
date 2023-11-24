@@ -475,6 +475,28 @@ int main(int argc, char *argv[])
             /*Run last matching application in history*/
             run_last(History, calls);
         }
+        else if (strcmp(calls[0], "cd") == 0){
+            
+            char* new_dir = calls[1];
+
+            int change_result = chdir(new_dir);
+            if(change_result == 0){
+
+                char* old_pwd = get_entry(lib, "PWD");
+                add_entry(lib, "OLDPWD", old_pwd);
+                char cwd[256];
+                getcwd(cwd, sizeof(cwd));
+                add_entry(lib, "PWD", cwd);
+            
+            } else {
+                perror("cd");
+            }
+        }
+        else if (strcmp(calls[0],"pwd") == 0){
+            char* pwd = get_entry(lib, "PWD");
+            printf("%s\n",pwd);
+        }
+        
         else{
             /*Execute an executable*/
             if (bflag){
