@@ -25,7 +25,7 @@ extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 void evn_variables(Library *lib)
 {
     //Get UID
-    uid_t uid = geteuid();
+    int uid = geteuid();
     //Get password
     struct passwd *pw = getpwuid(uid);
     
@@ -476,10 +476,17 @@ int main(int argc, char *argv[])
             run_last(History, calls);
         }
         else if (strcmp(calls[0], "cd") == 0){
-            
-            char* new_dir = calls[1];
+            char* new_dir = NULL;
+            int change_result;
+            if (strcmp(calls[1], "~") == 0){
+                new_dir = calls[1];
+                change_result = chdir(get_entry(lib, "HOME"));
+            }
+            else{
+                new_dir = calls[1];
+                change_result = chdir(new_dir);
+            }
 
-            int change_result = chdir(new_dir);
             if(change_result == 0){
 
                 char* old_pwd = get_entry(lib, "PWD");
