@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <pwd.h>
+#include <glob.h>
 #include "dataStructures.h"
 #include "mrsh.h"
 
@@ -68,6 +69,28 @@ void evn_variables(Library *lib)
     add_entry(lib, "SHELL", shell);
     add_entry(lib, "USER", user);
 }
+
+/*
+Takes in calls array and prints out file names based on glob patterns
+*/
+void glob_action(char **calls)
+{
+
+    glob_t glob_result;
+    int glob_state = glob(calls[1], GLOB_ERR, NULL, &glob_result);
+
+    if (glob_state != 0 ){
+        fprintf(stderr, "Error in globbing!\n");
+        exit(1);
+    }
+
+    for (size_t i = 0; i < glob_result.gl_pathc; i++) {
+        printf("%s\n", glob_result.gl_pathv[i]);
+    }
+
+    globfree(&glob_result);
+}
+
 
 /*
 Takes the user input(choice) and splits it into tokens
@@ -347,6 +370,18 @@ int background_flag(char *string)
 }
 
 /*
+Raises a flag if a ? glob is found
+*/
+int question_flag(char *string)
+{
+    int qflag = 0;
+    if (strstr(string, "?") != NULL){
+        qflag = 1;//Set flag
+    }
+    return qflag;
+}
+
+/*
 Reruns last matching application in the command history
 */
 void run_last(Queue *History, char **calls)
@@ -417,6 +452,7 @@ int main(int argc, char *argv[])
         int bflag = 0; //Flag to indicate if execute command in background
         int rflag = 0; //Flag to indicate if redirection is being requested
         int pflag = 0; //Flag to indicate if piping in command line
+        int qflag = 0; //Flag to indicate if ? glob is found
         char* user = get_entry(lib, "USER");
         char* host = get_entry(lib, "HOST");
         cwd = get_entry(lib, "PWD");
@@ -441,6 +477,8 @@ int main(int argc, char *argv[])
         rflag = redirection_flag(choice);//Set flag
         /*Check if background execution*/
         bflag = background_flag(choice);//Set flag
+        /*Check if ? glob*/
+        qflag = question_flag(choice);//Set flag
 
         /* tokenizes user input */ //segfaults if replaced with tokenize() fxn
         if (strlen(choice) > 1){ 
@@ -503,7 +541,13 @@ int main(int argc, char *argv[])
             char* pwd = get_entry(lib, "PWD");
             printf("%s\n",pwd);
         }
-        
+        else if (strcmp(calls[0], "ls") == 0){
+            if (calls[1] != NULL){
+                if (strncmp(&calls[1][0], "*", 1) == 0 || qflag){
+                        glob_action(calls);
+                    }
+            } else { action_foreground(calls); }
+        }
         else{
             /*Execute an executable*/
             if (bflag){
