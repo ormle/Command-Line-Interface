@@ -73,24 +73,28 @@ void evn_variables(Library *lib)
 /*
 Takes in calls array and prints out file names based on glob patterns
 */
-void glob_action(char **calls)
-{
+void glob_action(char **calls) {
+    int i = 0;
+    while (calls[i] != NULL) {
+        if (strpbrk(calls[i], "[*?]") != NULL) {
+            glob_t glob_result;
+            int glob_state = glob(calls[i], GLOB_ERR | GLOB_TILDE | GLOB_BRACE, NULL, &glob_result);
 
-    glob_t glob_result;
-    int glob_state = glob(calls[1], GLOB_ERR, NULL, &glob_result);
-
-    if (glob_state != 0 ){
-        fprintf(stderr, "Error in globbing!\n");
-        exit(1);
+            if (glob_state == 0) {
+                for (size_t j = 0; j < glob_result.gl_pathc; j++) {
+                    printf("%s\n", glob_result.gl_pathv[j]);
+                }
+                globfree(&glob_result);
+            } else if (glob_state == GLOB_NOMATCH) {
+                printf("No match found for pattern: %s\n", calls[i]);
+            } else {
+                fprintf(stderr, "Error in globbing!\n");
+            }
+        }
+        i++;
     }
-
-    for (size_t i = 0; i < glob_result.gl_pathc; i++) {
-        printf("%s\n", glob_result.gl_pathv[i]);
-    }
-
     globfree(&glob_result);
 }
-
 
 /*
 Takes the user input(choice) and splits it into tokens
@@ -542,12 +546,9 @@ int main(int argc, char *argv[])
             printf("%s\n",pwd);
         }
         else if (strcmp(calls[0], "ls") == 0){
-            if (calls[1] != NULL){
-                if (strncmp(&calls[1][0], "*", 1) == 0 || qflag){
-                        glob_action(calls);
-                    }
-            } else { action_foreground(calls); }
-        }
+            glob_action(calls);
+        } else { action_foreground(calls); }
+        
         else{
             /*Execute an executable*/
             if (bflag){
