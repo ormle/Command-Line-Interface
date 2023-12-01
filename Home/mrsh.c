@@ -19,6 +19,10 @@
 #include <glob.h>
 #include "dataStructures.h"
 #include "mrsh.h"
+#include <fnmatch.h>
+#include <dirent.h>
+#include <sys/types.h>
+
 
 extern Library *lib;
 extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
@@ -73,28 +77,28 @@ void evn_variables(Library *lib)
 /*
 Takes in calls array and prints out file names based on glob patterns
 */
-void glob_action(char **calls) {
-    int i = 0;
-    while (calls[i] != NULL) {
-        if (strpbrk(calls[i], "[*?]") != NULL) {
-            glob_t glob_result;
-            int glob_state = glob(calls[i], GLOB_ERR | GLOB_TILDE | GLOB_BRACE, NULL, &glob_result);
 
-            if (glob_state == 0) {
-                for (size_t j = 0; j < glob_result.gl_pathc; j++) {
-                    printf("%s\n", glob_result.gl_pathv[j]);
-                }
-                globfree(&glob_result);
-            } else if (glob_state == GLOB_NOMATCH) {
-                printf("No match found for pattern: %s\n", calls[i]);
-            } else {
-                fprintf(stderr, "Error in globbing!\n");
-            }
+void glob_action(char **calls)
+{
+    glob_t glob_result;
+    int glob_state = glob(calls[1], GLOB_ERR, NULL, &glob_result);
+
+    if (glob_state == GLOB_NOMATCH) {
+        printf("No match found for pattern [%s].\n", calls[1]);
+    } else if (glob_state != 0 ){
+        fprintf(stderr, "Error in globbing: %s\n", strerror(glob_state));
+        exit(1);
+    } else {
+        //printf("Matched Files for Pattern [%s]:\n", calls[1]);
+
+        for (size_t i = 0; i < glob_result.gl_pathc; i++) {
+            printf("%s\n", glob_result.gl_pathv[i]);
         }
-        i++;
+
+        globfree(&glob_result);
     }
-    globfree(&glob_result)
 }
+
 
 /*
 Takes the user input(choice) and splits it into tokens
@@ -545,13 +549,15 @@ int main(int argc, char *argv[])
             char* pwd = get_entry(lib, "PWD");
             printf("%s\n",pwd);
         }
-        else if (strcmp(calls[0], "ls") == 0){
-            if (calls[1] != NULL){
-                if (strncmp(&calls[1][0], "*", 1) == 0 || qflag){
-                        glob_action(calls);
-                    }
-            } else { action_foreground(calls); }
-        }
+
+       else if (strcmp(calls[0], "ls") == 0){
+    if (calls[1] != NULL){
+        glob_action(calls);
+    } else {
+        action_foreground(calls);
+    }
+}
+
         else{
             /*Execute an executable*/
             if (bflag){
