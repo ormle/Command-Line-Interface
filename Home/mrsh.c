@@ -93,7 +93,7 @@ void glob_action(char **calls) {
         }
         i++;
     }
-    globfree(&glob_result);
+    globfree(&glob_result)
 }
 
 /*
@@ -546,9 +546,12 @@ int main(int argc, char *argv[])
             printf("%s\n",pwd);
         }
         else if (strcmp(calls[0], "ls") == 0){
-            glob_action(calls);
-        } else { action_foreground(calls); }
-        
+            if (calls[1] != NULL){
+                if (strncmp(&calls[1][0], "*", 1) == 0 || qflag){
+                        glob_action(calls);
+                    }
+            } else { action_foreground(calls); }
+        }
         else{
             /*Execute an executable*/
             if (bflag){
